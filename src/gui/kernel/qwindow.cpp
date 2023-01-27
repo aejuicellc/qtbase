@@ -1410,10 +1410,19 @@ Qt::WindowStates QWindow::windowStates() const
 
     \sa parent()
 */
+#ifdef Q_OS_WIN
+static const char embeddedNativeParentHandle[] = "_q_embedded_native_parent_handle";
+#endif
 void QWindow::setTransientParent(QWindow *parent)
 {
     Q_D(QWindow);
-    if (parent && !parent->isTopLevel()) {
+    if (parent && (!parent->isTopLevel() &&
+        !(parent->d_func()->platformWindow && (parent->d_func()->platformWindow->isForeignWindow() ||
+                                               parent->d_func()->platformWindow->isEmbedded())
+#ifdef Q_OS_WIN
+                                               || parent->property(embeddedNativeParentHandle).isValid()
+#endif
+                                               ))) {
         qWarning() << parent << "must be a top level window.";
         return;
     }
